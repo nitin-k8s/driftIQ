@@ -210,7 +210,6 @@ MIT License - See LICENSE file for details
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
-- Email: your-email@example.com
 
 ---
 

@@ -757,12 +757,39 @@
     <script src="https://cdn.jsdelivr.net/npm/diff/dist/diff.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
     <script>
+        // Utility: Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Cache for compiled regex patterns
+        const regexCache = new Map();
+        function getCompiledRegex(pattern) {
+            if (!regexCache.has(pattern)) {
+                try {
+                    regexCache.set(pattern, new RegExp(pattern, 'g'));
+                } catch (e) {
+                    return null;
+                }
+            }
+            return regexCache.get(pattern);
+        }
+
         // State Management
         const state = {
             preConfig: '',
             postConfig: '',
             commands: [],
             commandFilter: '',
+            diffCache: new Map(),
             rules: {
                 session: {
                     lineIgnores: [],
@@ -817,31 +844,7 @@
         
         // Filter commands based on filter string
         function matchesCommandFilter(commandName, filter) {
-            if (lines.length < 2) return null;
-            
-            // Look backwards from data rows to find the header line
-            // A header is the last line before consistent tabular data starts
-            for (let i = 0; i < Math.min(5, lines.length - 1); i++) {
-                const line = lines[i];
-                const parts = line.split(/\s{2,}/);
-                
-                if (parts.length >= 2) {
-                    // Check if the NEXT lines (not this line) have similar column structure
-                    let validRows = 0;
-                    for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
-                        const rowParts = lines[j].split(/\s{2,}/);
-                        // Data rows should have similar or same number of columns
-                        if (rowParts.length >= parts.length - 1 && rowParts.length <= parts.length + 1) {
-                            validRows++;
-                        }
-                    }
-                    // If we found at least 2 valid data rows after this line, it's a header
-                    if (validRows >= 2) {
-                        return { headerIndex: i, columnCount: parts.length };
-                    }
-                }
-            }
-            return null;
+            // Removed duplicate/dead code
         }
         
         // Parse table from lines
@@ -1188,12 +1191,6 @@
                     lines: currentLines.filter((l, idx) => idx !== 0) // Remove first line (the command itself)
                 });
             }
-            
-            console.log('splitCommands parsed', commands.length, 'commands');
-            if (commands.length > 0) {
-                console.log('First command:', commands[0].name);
-                console.log('First command lines:', commands[0].lines.length);
-            }
 
             return commands;
         }
@@ -1221,11 +1218,6 @@
                 return lines;
             }
             
-            console.log(`[Pattern Replace] Command: "${commandName}" - Found ${commandReplacements.length} replacement rules`);
-            commandReplacements.forEach(r => {
-                console.log(`  - Rule: command="${r.command}", type=${r.type}, pattern=${r.pattern}, replacement="${r.replacement}"`);
-            });
-            
             // Check if we have any column-based replacements
             const hasColumnRules = commandReplacements.some(r => r.type === 'column');
             
@@ -1245,11 +1237,6 @@
                     if (words.length >= 3) {
                         headerLineIndex = i;
                         columnBoundaries = detectColumnBoundaries(lines[i]);
-                        console.log(`  [Column Detection] Using line ${i} as header: "${lines[i].substring(0, 60)}..."`);
-                        console.log(`  [Column Detection] Found ${columnBoundaries.length} columns:`);
-                        columnBoundaries.forEach((c, idx) => {
-                            console.log(`    Column ${idx}: "${c.name}" at chars [${c.start}:${c.end}]`);
-                        });
                         break;
                     }
                 }
@@ -1273,9 +1260,6 @@
                         const columnIndex = parseInt(replacement.pattern);
                         
                         if (!columnBoundaries || columnIndex >= columnBoundaries.length) {
-                            if (lineIdx === headerLineIndex + 1) {
-                                console.log(`  [First data line] Column ${columnIndex} out of range`);
-                            }
                             continue;
                         }
                         
@@ -1285,33 +1269,13 @@
                         // Extract current value at this column position
                         const currentValue = extractColumnByPosition(modifiedLine, colStart, colEnd);
                         
-                        if (lineIdx === headerLineIndex + 1) {
-                            console.log(`  [First data line] Replacing column ${columnIndex} (${columnBoundaries[columnIndex].name})`);
-                            console.log(`  [First data line] Position [${colStart}:${colEnd}]`);
-                            console.log(`  [First data line] Line: "${modifiedLine}"`);
-                            console.log(`  [First data line] Segment at [${colStart}:${colEnd}]: "${modifiedLine.substring(colStart, Math.min(colEnd, modifiedLine.length))}"`);
-                            console.log(`  [First data line] Current value (trimmed): "${currentValue}"`);
-                        }
-                        
                         // Replace the value (works for both empty and non-empty columns)
                         modifiedLine = replaceColumnByPosition(modifiedLine, colStart, colEnd, replacement.replacement);
-                        
-                        if (lineIdx === headerLineIndex + 1) {
-                            console.log(`  [First data line] After replacement: "${modifiedLine}"`);
-                        }
                     } else if (replacement.type === 'regex') {
                         // Regex-based replacement
-                        try {
-                            const regex = new RegExp(replacement.pattern, 'g');
-                            const before = modifiedLine;
+                        const regex = getCompiledRegex(replacement.pattern);
+                        if (regex) {
                             modifiedLine = modifiedLine.replace(regex, replacement.replacement);
-                            if (before !== modifiedLine) {
-                                console.log(`  [Regex Replace] Line ${lineIdx}: pattern="${replacement.pattern}"`);
-                                console.log(`    Before: "${before}"`);
-                                console.log(`    After:  "${modifiedLine}"`);
-                            }
-                        } catch (e) {
-                            console.error('Invalid regex in replacement:', replacement.pattern, e);
                         }
                     }
                 }
@@ -1367,17 +1331,12 @@
                 type
             };
             
-            console.log('Adding pattern replacement:', replacementRule);
-            
             if (makePermanent) {
                 state.rules.persistent.patternReplacements.push(replacementRule);
                 savePersistentRules();
             } else {
                 state.rules.session.patternReplacements.push(replacementRule);
             }
-            
-            console.log('Total session replacements:', state.rules.session.patternReplacements.length);
-            console.log('Total persistent replacements:', state.rules.persistent.patternReplacements.length);
             
             commandInput.value = '';
             patternInput.value = '';
@@ -1390,12 +1349,7 @@
         // Apply rules to filter lines
         function applyRules(lines, commandName) {
             // First apply pattern replacements
-            console.log(`[applyRules] Processing command: "${commandName}", lines: ${lines.length}`);
             const replacedLines = applyPatternReplacements(lines, commandName);
-            console.log(`[applyRules] After replacements, lines: ${replacedLines.length}`);
-            if (replacedLines.length > 0) {
-                console.log(`[applyRules] Sample replaced lines:`, replacedLines.slice(0, 3));
-            }
             
             return replacedLines.map((line, idx) => {
                 let ignored = false;
@@ -1418,6 +1372,12 @@
 
         // Compute diff for a single command
         function computeCommandDiff(preLines, postLines, commandName) {
+            // Create cache key
+            const cacheKey = `${commandName}:${JSON.stringify(state.rules)}:${state.showIgnored}`;
+            if (state.diffCache.has(cacheKey)) {
+                return state.diffCache.get(cacheKey);
+            }
+
             const preFiltered = applyRules(preLines, commandName);
             const postFiltered = applyRules(postLines, commandName);
 
@@ -1439,12 +1399,15 @@
                 { context: 10000 }
             );
 
-            return {
+            const result = {
                 diff,
                 preFiltered,
                 postFiltered,
                 hasChanges: preText !== postText
             };
+
+            state.diffCache.set(cacheKey, result);
+            return result;
         }
 
         // Render a command block
@@ -1767,24 +1730,20 @@
 
         // Compute and render all diffs
         function computeDiff() {
-            console.log('computeDiff called');
-            console.log('preConfig length:', state.preConfig?.length);
-            console.log('postConfig length:', state.postConfig?.length);
-            
             if (!state.preConfig || !state.postConfig) {
                 alert('Please select both pre and post configuration files');
                 return;
             }
 
             try {
+                // Clear diff cache when recomputing
+                state.diffCache.clear();
+
                 const preInput = state.preConfig;
                 const postInput = state.postConfig;
 
                 const preCommands = splitCommands(preInput);
                 const postCommands = splitCommands(postInput);
-                
-                console.log('Pre commands found:', preCommands.length);
-                console.log('Post commands found:', postCommands.length);
 
                 // Merge commands from both sides
                 const commandMap = new Map();
@@ -1802,7 +1761,6 @@
                 });
 
                 state.commands = Array.from(commandMap.values());
-                console.log('Total commands after merge:', state.commands.length);
 
                 recomputeDiff();
             } catch (error) {
@@ -1813,11 +1771,12 @@
 
         // Recompute diff without re-parsing
         function recomputeDiff() {
-            console.log('recomputeDiff called, commands:', state.commands.length);
+            // Clear diff cache when rules change
+            state.diffCache.clear();
+
             const resultsContainer = document.getElementById('diffResults');
             
             if (state.commands.length === 0) {
-                console.log('No commands to display');
                 resultsContainer.innerHTML = `
                     <div class="empty-state">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1832,7 +1791,6 @@
             try {
                 const html = state.commands.map((cmd, idx) => renderCommandBlock(cmd, idx)).join('');
                 resultsContainer.innerHTML = html;
-                console.log('HTML rendered for', state.commands.length, 'commands');
 
                 // Render each command's diff with filter applied
                 let visibleCommands = 0;
@@ -1852,16 +1810,11 @@
                     if (isIgnored && !state.showIgnored) return;
 
                     const diffResult = computeCommandDiff(cmd.preLines || [], cmd.postLines || [], cmd.name);
-                    console.log(`[recomputeDiff] Command "${cmd.name}": hasChanges=${diffResult.hasChanges}, rendering diff...`);
                     renderDiff(cmd.name, diffResult.diff, `command-${idx}`, diffResult.preFiltered, diffResult.postFiltered, diffResult);
                 });
-                
-                console.log('Visible commands after filter:', visibleCommands);
 
                 updateStats();
-                console.log('Diff rendering complete');
             } catch (error) {
-                console.error('Error in recomputeDiff:', error);
                 resultsContainer.innerHTML = `<div class="empty-state"><p style="color: #e74c3c;">Error rendering diff: ${escapeHtml(error.message)}</p></div>`;
             }
         }
@@ -1962,27 +1915,20 @@
         // File handling
         function handleFileSelect(fileInput, infoElement, isPreConfig) {
             if (!fileInput || !infoElement) {
-                console.error('File input or info element not found');
                 return;
             }
             
-            console.log('Setting up file handler for', isPreConfig ? 'pre' : 'post', 'config');
-            
             fileInput.addEventListener('change', async (e) => {
-                console.log('File selected:', e.target.files[0]?.name);
                 const file = e.target.files[0];
                 if (!file) return;
 
                 try {
                     const text = await file.text();
-                    console.log('File read successfully, length:', text.length);
                     
                     if (isPreConfig) {
                         state.preConfig = text;
-                        console.log('Pre config loaded');
                     } else {
                         state.postConfig = text;
-                        console.log('Post config loaded');
                     }
 
                     infoElement.className = 'file-info loaded';
@@ -1996,7 +1942,6 @@
                         </div>
                     `;
                 } catch (error) {
-                    console.error('Error reading file:', error);
                     alert('Error reading file: ' + error.message);
                     infoElement.className = 'file-info';
                     infoElement.innerHTML = '<span style="color: #e74c3c;">Error loading file</span>';
@@ -2006,9 +1951,14 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing...');
             loadPersistentRules();
             updateRulesDisplay();
+            
+            // Create debounced filter function
+            const debouncedFilter = debounce(() => {
+                state.commandFilter = document.getElementById('commandFilter').value.trim();
+                recomputeDiff();
+            }, 300);
             
             // Set up event listeners
             document.getElementById('computeDiff').addEventListener('click', computeDiff);
@@ -2037,11 +1987,10 @@
                 }
             });
             
-            // Live filter on command input
+            // Live filter on command input with debouncing
             document.getElementById('commandFilter').addEventListener('input', (e) => {
                 if (document.getElementById('liveFilter').checked) {
-                    state.commandFilter = e.target.value.trim();
-                    recomputeDiff();
+                    debouncedFilter();
                 }
             });
             
@@ -2057,19 +2006,12 @@
             const postFileInput = document.getElementById('postFileInput');
             const postFileInfo = document.getElementById('postFileInfo');
             
-            console.log('Pre file input:', preFileInput);
-            console.log('Post file input:', postFileInput);
-            
             if (preFileInput && preFileInfo) {
                 handleFileSelect(preFileInput, preFileInfo, true);
-            } else {
-                console.error('Pre file input or info element not found');
             }
             
             if (postFileInput && postFileInfo) {
                 handleFileSelect(postFileInput, postFileInfo, false);
-            } else {
-                console.error('Post file input or info element not found');
             }
         });
     </script>

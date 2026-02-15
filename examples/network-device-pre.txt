@@ -1,0 +1,51 @@
+command: show version
+Cisco IOS Software, C3750 Software (C3750-IPSERVICESK9-M), Version 15.0(2)SE11
+Switch uptime is 89 days, 4 hours, 22 minutes
+System serial number: CAT1234ABCD
+System image file is "flash:c3750-ipservicesk9-mz.150-2.SE11.bin"
+
+command: show interfaces status
+Port      Name               Status       Vlan       Duplex  Speed Type
+Gi1/0/1   Server-Port       connected    10         a-full  a-1000 10/100/1000BaseTX
+Gi1/0/2   Uplink            connected    trunk      a-full  a-1000 10/100/1000BaseTX
+Gi1/0/3   AP-Connection     connected    20         a-full  a-100  10/100/1000BaseTX
+Gi1/0/4                     notconnect   1          auto    auto   10/100/1000BaseTX
+Gi1/0/5   Printer           connected    30         a-full  a-100  10/100/1000BaseTX
+
+command: show vlan brief
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Gi1/0/4
+10   Servers                          active    Gi1/0/1
+20   Wireless                         active    Gi1/0/3
+30   Printers                         active    Gi1/0/5
+99   Management                       active    
+
+command: show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+Vlan1                  unassigned      YES NVRAM  administratively down down    
+Vlan99                 192.168.99.10   YES NVRAM  up                    up      
+GigabitEthernet1/0/1   unassigned      YES unset  up                    up      
+GigabitEthernet1/0/2   unassigned      YES unset  up                    up      
+
+command: show running-config
+Building configuration...
+Current configuration : 4567 bytes
+!
+version 15.0
+!
+hostname SWITCH-CORE-01
+!
+enable secret 5 $1$xyz$abc123def456ghi789
+!
+interface GigabitEthernet1/0/1
+ description Server-Port
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+!
+interface GigabitEthernet1/0/2
+ description Uplink
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,99
+!

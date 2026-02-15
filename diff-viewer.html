@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriftIQ - Configuration Drift Analysis</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0;
+            padding: 0 20px;
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .input-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .input-panel h3 {
+            margin-bottom: 12px;
+            color: #34495e;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #dfe4ea;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            background: #f8f9fa;
+        }
+
+        input[type="file"]:hover {
+            border-color: #3498db;
+            background: #e9ecef;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2c3e50;
+            min-height: 40px;
+        }
+
+        .file-info.loaded {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .file-info .file-name {
+            font-weight: 600;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .file-info .file-size {
+            font-size: 12px;
+            color: #6c757d;
+            margin-left: 10px;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .controls-row:last-child {
+            margin-bottom: 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button.secondary {
+            background: #95a5a6;
+        }
+
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+
+        button.danger {
+            background: #e74c3c;
+        }
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        button.success {
+            background: #27ae60;
+        }
+
+        button.success:hover {
+            background: #229954;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 300px;
+            padding: 10px 12px;
+            border: 1px solid #dfe4ea;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            background: #ecf0f1;
+            border-radius: 6px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .diff-results {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .command-block {
+            margin-bottom: 20px;
+            border: 1px solid #dfe4ea;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .command-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .command-header:hover {
+            background: #e9ecef;
+        }
+
+        .command-header.ignored {
+            background: #ecf0f1;
+            opacity: 0.7;
+        }
+
+        .command-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .command-name {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .command-badge {
+            padding: 4px 10px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .command-badge.no-diff {
+            background: #95a5a6;
+        }
+        
+        .command-badge.filtered {
+            background: #3498db;
+        }
+
+        .command-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .command-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .chevron {
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+
+        .chevron.open {
+            transform: rotate(90deg);
+        }
+
+        .command-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            display: none;
+        }
+
+        .command-content.open {
+            max-height: none;
+            display: block;
+        }
+
+        .command-content .command-diff {
+            overflow: auto;
+        }
+
+        .command-diff {
+            padding: 20px;
+            background: white;
+            min-height: 50px;
+        }
+        
+        .no-changes-view {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin: 10px;
+        }
+        
+        .no-changes-message {
+            color: #27ae60;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 4px;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .normalized-output {
+            background: white;
+            border-radius: 4px;
+            padding: 15px;
+            border: 1px solid #dfe4ea;
+        }
+        
+        .output-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .normalized-output pre {
+            margin: 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #2c3e50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid #dfe4ea;
+            border-radius: 4px;
+        }
+        
+        .output-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            background: white;
+        }
+        
+        .output-table th {
+            background: #34495e;
+            color: white;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background 0.2s;
+        }
+        
+        .output-table th:hover {
+            background: #2c3e50;
+        }
+        
+        .output-table th.excluded {
+            background: #95a5a6;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .output-table th::after {
+            content: ' ×';
+            opacity: 0;
+            transition: opacity 0.2s;
+            margin-left: 5px;
+        }
+        
+        .output-table th:hover::after {
+            opacity: 0.7;
+        }
+        
+        .output-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .output-table td.excluded {
+            background: #f8f9fa;
+            opacity: 0.4;
+            text-decoration: line-through;
+        }
+        
+        .output-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .output-table tr:hover {
+            background: #e9ecef;
+        }
+        
+        .table-diff-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 15px 0;
+        }
+        
+        .table-side {
+            border: 1px solid #dfe4ea;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .table-side-header {
+            background: #34495e;
+            color: white;
+            padding: 8px 12px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .table-row-added {
+            background-color: #d4edda !important;
+        }
+        
+        .table-row-removed {
+            background-color: #f8d7da !important;
+        }
+        
+        .table-row-modified {
+            background-color: #fff3cd !important;
+        }
+        
+        .table-cell-modified {
+            background-color: #ffeaa7;
+            font-weight: 600;
+        }
+        
+        .pre-text {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .d2h-wrapper {
+            font-size: 13px;
+        }
+
+        .d2h-file-header {
+            display: none;
+        }
+
+        .d2h-code-side-linenumber {
+            cursor: pointer;
+        }
+
+        .d2h-code-side-line {
+            position: relative;
+        }
+
+        .line-menu {
+            position: absolute;
+            top: 100%;
+            left: 50px;
+            background: white;
+            border: 1px solid #dfe4ea;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 220px;
+        }
+
+        .line-menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 13px;
+        }
+
+        .line-menu-item:hover {
+            background: #f8f9fa;
+        }
+
+        .line-menu-item:first-child {
+            border-radius: 4px 4px 0 0;
+        }
+
+        .line-menu-item:last-child {
+            border-radius: 0 0 4px 4px;
+        }
+
+        .d2h-code-side-line.ignored {
+            background: #f8f9fa !important;
+            opacity: 0.5;
+        }
+
+        .d2h-code-side-line.ignored .d2h-code-line-ctn {
+            text-decoration: line-through;
+        }
+        
+        /* Override diff colors - use yellow for modifications */
+        .d2h-ins {
+            background-color: #d4edda !important;
+        }
+        
+        .d2h-del {
+            background-color: #f8d7da !important;
+        }
+        
+        .d2h-info {
+            background-color: #fff3cd !important;
+        }
+        
+        .d2h-code-line ins,
+        .d2h-code-line-ctn ins {
+            background-color: #ffeb3b !important;
+            color: #000 !important;
+            font-weight: 600;
+            text-decoration: none;
+            padding: 2px 0;
+        }
+        
+        .d2h-code-line del,
+        .d2h-code-line-ctn del {
+            background-color: #ff9800 !important;
+            color: #000 !important;
+            font-weight: 600;
+            text-decoration: line-through;
+            padding: 2px 0;
+        }
+        
+        .d2h-code-side-line.d2h-cntx ins,
+        .d2h-code-side-line.d2h-cntx del {
+            background-color: #ffeb3b !important;
+            color: #000 !important;
+        }
+
+        .rules-panel {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .rules-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #34495e;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .rule-text {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #2c3e50;
+        }
+
+        .rule-type {
+            padding: 2px 8px;
+            background: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-right: 10px;
+        }
+
+        .rule-type.persistent {
+            background: #27ae60;
+        }
+
+        .rule-delete {
+            padding: 4px 10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 1200px) {
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>⚡ DriftIQ - Configuration Drift Analysis</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="input-section">
+            <div class="input-panel">
+                <h3>Pre-Configuration</h3>
+                <input type="file" id="preFileInput" accept=".txt,.log,.conf,.cfg" style="margin-bottom: 10px;">
+                <div id="preFileInfo" class="file-info"></div>
+            </div>
+            <div class="input-panel">
+                <h3>Post-Configuration</h3>
+                <input type="file" id="postFileInput" accept=".txt,.log,.conf,.cfg" style="margin-bottom: 10px;">
+                <div id="postFileInfo" class="file-info"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="controls-row">
+                <button id="computeDiff">🔍 Compute Diff</button>
+                <button id="exportReport" class="success">📄 Export HTML Report</button>
+                <label>
+                    <input type="checkbox" id="showIgnored">
+                    Show Ignored Lines
+                </label>
+            </div>
+            <div class="controls-row">
+                <input type="text" id="commandFilter" placeholder="Filter commands (e.g., 'show version' or 'show ip' or use * for wildcard)">
+                <button id="applyFilter">Apply Filter</button>
+                <button id="clearFilter" class="secondary">Clear Filter</button>
+                <label>
+                    <input type="checkbox" id="liveFilter" checked>
+                    Live Update
+                </label>
+            </div>
+            <div class="controls-row">
+                <input type="text" id="regexInput" placeholder="Enter regex pattern (e.g., ^#.* or timestamp)">
+                <button id="addRegex">Add Pattern</button>
+                <label>
+                    <input type="checkbox" id="makePermanent">
+                    Make Permanent
+                </label>
+            </div>
+            <div class="controls-row">
+                <input type="text" id="replaceCommand" placeholder="Command name (e.g., show auth session)" style="min-width: 250px;">
+                <input type="text" id="replacePattern" placeholder="Pattern or 'column:5' for 5th column" style="min-width: 200px;">
+                <input type="text" id="replaceValue" placeholder="Replacement (e.g., XXXXX)" style="min-width: 150px;">
+                <button id="addReplacement">Add Replacement</button>
+                <label>
+                    <input type="checkbox" id="replacePermanent">
+                    Permanent
+                </label>
+            </div>
+            <div class="controls-row">
+                <button id="clearSession" class="secondary">Clear Session Rules</button>
+                <button id="clearAll" class="danger">Clear All Rules</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-value" id="totalDiffs">0</span>
+                <span class="stat-label">Total Differences</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="visibleCommands">0</span>
+                <span class="stat-label">Visible Commands</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="ignoredLines">0</span>
+                <span class="stat-label">Ignored Lines</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="ignoredCommands">0</span>
+                <span class="stat-label">Ignored Commands</span>
+            </div>
+        </div>
+
+        <div class="rules-panel" id="rulesPanel" style="display: none;">
+            <div class="rules-title">Active Rules</div>
+            <div id="rulesList"></div>
+        </div>
+
+        <div class="diff-results" id="diffResults">
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                </svg>
+                <p>No diff computed yet. Enter configurations and click "Compute Diff".</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/diff/dist/diff.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
+    <script>
+        // State Management
+        const state = {
+            preConfig: '',
+            postConfig: '',
+            commands: [],
+            commandFilter: '',
+            rules: {
+                session: {
+                    lineIgnores: [],
+                    regexPatterns: [],
+                    commandIgnores: [],
+                    patternReplacements: [] // { command, pattern, replacement, type }
+                },
+                persistent: {
+                    regexPatterns: [],
+                    patternReplacements: [] // { command, pattern, replacement, type }
+                }
+            },
+            showIgnored: true
+        };
+
+        // Load persistent rules from localStorage
+        function loadPersistentRules() {
+            const stored = localStorage.getItem('driftiq-rules');
+            if (stored) {
+                try {
+                    state.rules.persistent = JSON.parse(stored);
+                    // Ensure patternReplacements exists for backward compatibility
+                    if (!state.rules.persistent.patternReplacements) {
+                        state.rules.persistent.patternReplacements = [];
+                    }
+                    // Clear old regexPatterns (deprecated - now using patternReplacements for regex)
+                    state.rules.persistent.regexPatterns = [];
+                } catch (e) {
+                    console.error('Failed to load persistent rules:', e);
+                }
+            }
+        }
+
+        // Save persistent rules to localStorage
+        function savePersistentRules() {
+            localStorage.setItem('driftiq-rules', JSON.stringify(state.rules.persistent));
+        }
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        // Filter commands based on filter string
+        function matchesCommandFilter(commandName, filter) {
+            if (lines.length < 2) return null;
+            
+            // Look backwards from data rows to find the header line
+            // A header is the last line before consistent tabular data starts
+            for (let i = 0; i < Math.min(5, lines.length - 1); i++) {
+                const line = lines[i];
+                const parts = line.split(/\s{2,}/);
+                
+                if (parts.length >= 2) {
+                    // Check if the NEXT lines (not this line) have similar column structure
+                    let validRows = 0;
+                    for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+                        const rowParts = lines[j].split(/\s{2,}/);
+                        // Data rows should have similar or same number of columns
+                        if (rowParts.length >= parts.length - 1 && rowParts.length <= parts.length + 1) {
+                            validRows++;
+                        }
+                    }
+                    // If we found at least 2 valid data rows after this line, it's a header
+                    if (validRows >= 2) {
+                        return { headerIndex: i, columnCount: parts.length };
+                    }
+                }
+            }
+            return null;
+        }
+        
+        // Parse table from lines
+        function parseTable(lines, startIndex) {
+            const headerLine = lines[startIndex];
+            const headers = headerLine.split(/\s{2,}/).map(h => h.trim()).filter(h => h);
+            
+            const rows = [];
+            for (let i = startIndex + 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line.trim()) break; // Empty line ends table
+                
+                const cells = line.split(/\s{2,}/).map(c => c.trim());
+                if (cells.length >= 1 && cells[0]) {
+                    rows.push(cells);
+                } else {
+                    break; // Non-table line
+                }
+            }
+            
+            return {
+                headers,
+                rows,
+                startLine: startIndex,
+                endLine: startIndex + rows.length
+            };
+        }
+        
+        // Apply column exclusions to table
+        function applyColumnExclusions(table, excludedColumns) {
+            if (!excludedColumns || excludedColumns.length === 0) return table;
+            
+            const filteredHeaders = table.headers.filter((_, idx) => !excludedColumns.includes(idx));
+            const filteredRows = table.rows.map(row => 
+                row.filter((_, idx) => !excludedColumns.includes(idx))
+            );
+            
+            return {
+                ...table,
+                headers: filteredHeaders,
+                rows: filteredRows
+            };
+        }
+        
+        // Render table as HTML
+        function renderTable(table, commandName, excludedColumns = [], diffInfo = null) {
+            let html = '<table class="output-table" data-command="' + escapeHtml(commandName) + '">';
+            
+            // Headers
+            html += '<thead><tr>';
+            table.headers.forEach((header, idx) => {
+                const isExcluded = excludedColumns.includes(idx);
+                const className = isExcluded ? 'excluded' : '';
+                html += `<th class="${className}" data-col-idx="${idx}" onclick="toggleColumnExclusion('${escapeHtml(commandName)}', ${idx})">${escapeHtml(header)}</th>`;
+            });
+            html += '</tr></thead>';
+            
+            // Rows
+            html += '<tbody>';
+            table.rows.forEach((row, rowIdx) => {
+                let rowClass = '';
+                if (diffInfo && diffInfo[rowIdx]) {
+                    rowClass = diffInfo[rowIdx].type;
+                }
+                html += `<tr class="${rowClass}">`;
+                table.headers.forEach((_, colIdx) => {
+                    const cell = row[colIdx] || '';
+                    let cellClass = '';
+                    if (excludedColumns.includes(colIdx)) {
+                        cellClass = 'excluded';
+                    } else if (diffInfo && diffInfo[rowIdx] && diffInfo[rowIdx].modifiedColumns && diffInfo[rowIdx].modifiedColumns.includes(colIdx)) {
+                        cellClass = 'table-cell-modified';
+                    }
+                    html += `<td class="${cellClass}">${escapeHtml(cell)}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            
+            html += '</table>';
+            return html;
+        }
+        
+        // Compute diff between two tables
+        function computeTableDiff(preTable, postTable) {
+            const preRows = preTable.rows.map(r => r.join('|'));
+            const postRows = postTable.rows.map(r => r.join('|'));
+            
+            const preDiff = [];
+            const postDiff = [];
+            
+            let preIdx = 0;
+            let postIdx = 0;
+            
+            while (preIdx < preRows.length || postIdx < postRows.length) {
+                if (preIdx >= preRows.length) {
+                    // Remaining rows are additions
+                    postDiff.push({ type: 'table-row-added' });
+                    postIdx++;
+                } else if (postIdx >= postRows.length) {
+                    // Remaining rows are removals
+                    preDiff.push({ type: 'table-row-removed' });
+                    preIdx++;
+                } else if (preRows[preIdx] === postRows[postIdx]) {
+                    // Rows match
+                    preDiff.push({ type: '' });
+                    postDiff.push({ type: '' });
+                    preIdx++;
+                    postIdx++;
+                } else {
+                    // Check if row was modified or added/removed
+                    const foundInPost = postRows.indexOf(preRows[preIdx], postIdx);
+                    const foundInPre = preRows.indexOf(postRows[postIdx], preIdx);
+                    
+                    if (foundInPost !== -1 && foundInPost - postIdx < 3) {
+                        // Row exists later in post, mark intermediate as added
+                        postDiff.push({ type: 'table-row-added' });
+                        postIdx++;
+                    } else if (foundInPre !== -1 && foundInPre - preIdx < 3) {
+                        // Row exists later in pre, mark current as removed
+                        preDiff.push({ type: 'table-row-removed' });
+                        preIdx++;
+                    } else {
+                        // Rows at same position but different - check cell-level changes
+                        const preRow = preTable.rows[preIdx];
+                        const postRow = postTable.rows[postIdx];
+                        const modifiedColumns = [];
+                        
+                        for (let i = 0; i < Math.max(preRow.length, postRow.length); i++) {
+                            if (preRow[i] !== postRow[i]) {
+                                modifiedColumns.push(i);
+                            }
+                        }
+                        
+                        preDiff.push({ type: 'table-row-modified', modifiedColumns });
+                        postDiff.push({ type: 'table-row-modified', modifiedColumns });
+                        preIdx++;
+                        postIdx++;
+                    }
+                }
+            }
+            
+            return { preDiff, postDiff };
+        }
+        
+        // Convert table back to text (with exclusions applied)
+        function tableToText(table, excludedColumns = []) {
+            const filteredTable = applyColumnExclusions(table, excludedColumns);
+            let text = filteredTable.headers.join('  ') + '\n';
+            filteredTable.rows.forEach(row => {
+                text += row.join('  ') + '\n';
+            });
+            return text;
+        }
+        
+        // Filter commands based on filter string
+        function matchesCommandFilter(commandName, filter) {
+            if (!filter || filter.trim() === '') return true;
+            
+            const filterLower = filter.toLowerCase().trim();
+            const commandLower = commandName.toLowerCase();
+            
+            // Support multiple filters separated by comma or pipe
+            const filters = filterLower.split(/[,|]/).map(f => f.trim()).filter(f => f);
+            
+            for (const f of filters) {
+                // Wildcard support
+                if (f.includes('*')) {
+                    const pattern = f.replace(/\*/g, '.*');
+                    const regex = new RegExp('^' + pattern + '$');
+                    if (regex.test(commandLower)) return true;
+                } else {
+                    // Simple substring match
+                    if (commandLower.includes(f)) return true;
+                }
+            }
+            
+            return filters.length === 0;
+        }
+        
+        // Apply command filter
+        function applyCommandFilter() {
+            const filterInput = document.getElementById('commandFilter');
+            state.commandFilter = filterInput.value.trim();
+            recomputeDiff();
+        }
+        
+        // Clear command filter
+        function clearCommandFilter() {
+            const filterInput = document.getElementById('commandFilter');
+            filterInput.value = '';
+            state.commandFilter = '';
+            recomputeDiff();
+        }
+
+        // Strip 'command:' prefix from command name
+        function cleanCommandName(name) {
+            return name.replace(/^command:\s*/i, '').trim();
+        }
+
+        // Detect column boundaries from header row
+        function detectColumnBoundaries(headerLine) {
+            const words = [];
+            let inWord = false;
+            let wordStart = -1;
+            let currentWord = '';
+            
+            for (let i = 0; i < headerLine.length; i++) {
+                const char = headerLine[i];
+                const isSpace = /\s/.test(char);
+                
+                if (!isSpace && !inWord) {
+                    wordStart = i;
+                    inWord = true;
+                    currentWord = char;
+                } else if (!isSpace && inWord) {
+                    currentWord += char;
+                } else if (isSpace && inWord) {
+                    words.push({ name: currentWord, start: wordStart, wordEnd: i });
+                    inWord = false;
+                    currentWord = '';
+                }
+            }
+            
+            if (inWord) {
+                words.push({ name: currentWord, start: wordStart, wordEnd: headerLine.length });
+            }
+            
+            // Define column ranges: each column extends to the start of the next column
+            const columns = [];
+            for (let i = 0; i < words.length; i++) {
+                const start = words[i].start;
+                const end = (i < words.length - 1) ? words[i + 1].start : headerLine.length;
+                columns.push({ 
+                    name: words[i].name, 
+                    start: start, 
+                    end: end 
+                });
+            }
+            
+            return columns;
+        }
+        
+        // Extract column value from line using column boundaries
+        function extractColumnByPosition(line, colStart, colEnd) {
+            if (colStart >= line.length) {
+                return '';
+            }
+            const segment = line.substring(colStart, Math.min(colEnd, line.length));
+            return segment.trim();
+        }
+        
+        // Replace column value at position, preserving exact spacing
+        function replaceColumnByPosition(line, colStart, colEnd, newValue) {
+            // Ensure line is long enough
+            if (line.length < colEnd) {
+                line = line.padEnd(colEnd, ' ');
+            }
+            
+            const before = line.substring(0, colStart);
+            const segment = line.substring(colStart, colEnd);
+            const after = line.substring(colEnd);
+            
+            // Find where the actual value is within this segment (if any)
+            const trimmedSegment = segment.trim();
+            
+            if (!trimmedSegment) {
+                // Empty column - place new value at start of segment with trailing spaces
+                const paddedValue = newValue.padEnd(segment.length, ' ');
+                return before + paddedValue + after;
+            } else {
+                // Has value - find it and replace while maintaining spacing
+                const leadingSpaces = segment.match(/^\s*/)[0];
+                const trailingSpaces = segment.match(/\s*$/)[0];
+                const valueSpace = segment.length - leadingSpaces.length - trailingSpaces.length;
+                
+                // Pad or truncate new value to fit the value space
+                const paddedNewValue = newValue.length <= valueSpace 
+                    ? newValue.padEnd(valueSpace, ' ')
+                    : newValue.substring(0, valueSpace);
+                
+                return before + leadingSpaces + paddedNewValue + trailingSpaces + after;
+            }
+        }
+
+        // Split text into command sections
+        function splitCommands(text) {
+            const lines = text.split('\n');
+            const commands = [];
+            let currentCommand = null;
+            let currentLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const trimmed = line.trim();
+                
+                // Detect command patterns:
+                // 1. Lines starting with "show "
+                // 2. Lines with "# show ..."
+                // 3. Lines with "command: show ..."
+                // 4. Any line ending with "#" followed by a command
+                let isCommand = false;
+                let commandName = null;
+                
+                if (trimmed.startsWith('show ')) {
+                    isCommand = true;
+                    commandName = trimmed;
+                } else if (trimmed.match(/.*#\s*show\s+.*/)) {
+                    isCommand = true;
+                    commandName = trimmed;
+                } else if (trimmed.match(/^command:\s*(.+)/i)) {
+                    isCommand = true;
+                    commandName = trimmed.replace(/^command:\s*/i, '');
+                } else if (trimmed.match(/^(.+#)\s*$/)) {
+                    // Prompt line, next line might be command
+                    isCommand = false;
+                } else if (currentCommand === null && trimmed.length > 0 && !trimmed.startsWith('#') && !trimmed.startsWith('!')) {
+                    // If no current command and line isn't empty/comment, treat as potential command
+                    // This handles cases where commands are on their own lines
+                    isCommand = true;
+                    commandName = trimmed;
+                }
+
+                if (isCommand && commandName) {
+                    if (currentCommand) {
+                        commands.push({
+                            name: cleanCommandName(currentCommand),
+                            lines: currentLines.filter((l, idx) => idx !== 0) // Remove first line (the command itself)
+                        });
+                    }
+                    currentCommand = commandName;
+                    currentLines = [line];
+                } else if (currentCommand) {
+                    currentLines.push(line);
+                } else if (trimmed === '' || trimmed.startsWith('#') || trimmed.startsWith('!')) {
+                    // Skip empty lines and comments at the start
+                    continue;
+                }
+            }
+
+            if (currentCommand) {
+                commands.push({
+                    name: cleanCommandName(currentCommand),
+                    lines: currentLines.filter((l, idx) => idx !== 0) // Remove first line (the command itself)
+                });
+            }
+            
+            console.log('splitCommands parsed', commands.length, 'commands');
+            if (commands.length > 0) {
+                console.log('First command:', commands[0].name);
+                console.log('First command lines:', commands[0].lines.length);
+            }
+
+            return commands;
+        }
+
+        // Apply pattern replacements to lines
+        function applyPatternReplacements(lines, commandName) {
+            const allReplacements = [
+                ...(state.rules.session.patternReplacements || []),
+                ...(state.rules.persistent.patternReplacements || [])
+            ];
+            
+            if (allReplacements.length === 0) {
+                return lines;
+            }
+            
+            // Filter replacements for this command
+            const commandReplacements = allReplacements.filter(r => {
+                const cmdLower = r.command.toLowerCase().trim();
+                const nameLower = commandName.toLowerCase().trim();
+                const matches = nameLower.includes(cmdLower) || cmdLower === '*';
+                return matches;
+            });
+            
+            if (commandReplacements.length === 0) {
+                return lines;
+            }
+            
+            console.log(`[Pattern Replace] Command: "${commandName}" - Found ${commandReplacements.length} replacement rules`);
+            commandReplacements.forEach(r => {
+                console.log(`  - Rule: command="${r.command}", type=${r.type}, pattern=${r.pattern}, replacement="${r.replacement}"`);
+            });
+            
+            // Check if we have any column-based replacements
+            const hasColumnRules = commandReplacements.some(r => r.type === 'column');
+            
+            // Find the header row (only if we have column-based rules)
+            let headerLineIndex = -1;
+            let columnBoundaries = null;
+            
+            if (hasColumnRules) {
+                for (let i = 0; i < Math.min(3, lines.length); i++) {
+                    const line = lines[i].trim();
+                    // Skip empty lines
+                    if (!line) {
+                        continue;
+                    }
+                    // Check if this looks like a header (multiple words)
+                    const words = line.split(/\s+/).filter(w => w);
+                    if (words.length >= 3) {
+                        headerLineIndex = i;
+                        columnBoundaries = detectColumnBoundaries(lines[i]);
+                        console.log(`  [Column Detection] Using line ${i} as header: "${lines[i].substring(0, 60)}..."`);
+                        console.log(`  [Column Detection] Found ${columnBoundaries.length} columns:`);
+                        columnBoundaries.forEach((c, idx) => {
+                            console.log(`    Column ${idx}: "${c.name}" at chars [${c.start}:${c.end}]`);
+                        });
+                        break;
+                    }
+                }
+            }
+            
+            return lines.map((line, lineIdx) => {
+                let modifiedLine = line;
+                
+                // Skip header row for column-based replacements only
+                if (hasColumnRules && lineIdx <= headerLineIndex) {
+                    return modifiedLine;
+                }
+                
+                // Skip empty or whitespace-only lines
+                if (!line.trim()) {
+                    return modifiedLine;
+                }
+                
+                for (const replacement of commandReplacements) {
+                    if (replacement.type === 'column') {
+                        const columnIndex = parseInt(replacement.pattern);
+                        
+                        if (!columnBoundaries || columnIndex >= columnBoundaries.length) {
+                            if (lineIdx === headerLineIndex + 1) {
+                                console.log(`  [First data line] Column ${columnIndex} out of range`);
+                            }
+                            continue;
+                        }
+                        
+                        const colStart = columnBoundaries[columnIndex].start;
+                        const colEnd = columnBoundaries[columnIndex].end;
+                        
+                        // Extract current value at this column position
+                        const currentValue = extractColumnByPosition(modifiedLine, colStart, colEnd);
+                        
+                        if (lineIdx === headerLineIndex + 1) {
+                            console.log(`  [First data line] Replacing column ${columnIndex} (${columnBoundaries[columnIndex].name})`);
+                            console.log(`  [First data line] Position [${colStart}:${colEnd}]`);
+                            console.log(`  [First data line] Line: "${modifiedLine}"`);
+                            console.log(`  [First data line] Segment at [${colStart}:${colEnd}]: "${modifiedLine.substring(colStart, Math.min(colEnd, modifiedLine.length))}"`);
+                            console.log(`  [First data line] Current value (trimmed): "${currentValue}"`);
+                        }
+                        
+                        // Replace the value (works for both empty and non-empty columns)
+                        modifiedLine = replaceColumnByPosition(modifiedLine, colStart, colEnd, replacement.replacement);
+                        
+                        if (lineIdx === headerLineIndex + 1) {
+                            console.log(`  [First data line] After replacement: "${modifiedLine}"`);
+                        }
+                    } else if (replacement.type === 'regex') {
+                        // Regex-based replacement
+                        try {
+                            const regex = new RegExp(replacement.pattern, 'g');
+                            const before = modifiedLine;
+                            modifiedLine = modifiedLine.replace(regex, replacement.replacement);
+                            if (before !== modifiedLine) {
+                                console.log(`  [Regex Replace] Line ${lineIdx}: pattern="${replacement.pattern}"`);
+                                console.log(`    Before: "${before}"`);
+                                console.log(`    After:  "${modifiedLine}"`);
+                            }
+                        } catch (e) {
+                            console.error('Invalid regex in replacement:', replacement.pattern, e);
+                        }
+                    }
+                }
+                
+                return modifiedLine;
+            });
+        }
+        
+        // Add pattern replacement
+        function addPatternReplacement() {
+            const commandInput = document.getElementById('replaceCommand');
+            const patternInput = document.getElementById('replacePattern');
+            const valueInput = document.getElementById('replaceValue');
+            const makePermanent = document.getElementById('replacePermanent').checked;
+            
+            const command = commandInput.value.trim();
+            const pattern = patternInput.value.trim();
+            const replacement = valueInput.value.trim();
+            
+            if (!command || !pattern || !replacement) {
+                alert('Please fill in all fields: command, pattern, and replacement value');
+                return;
+            }
+            
+            // Determine type: column or regex
+            let type = 'regex';
+            let processedPattern = pattern;
+            
+            if (pattern.toLowerCase().startsWith('column:')) {
+                type = 'column';
+                processedPattern = pattern.substring(7).trim();
+                // Convert to 0-based index
+                const columnNum = parseInt(processedPattern);
+                if (isNaN(columnNum) || columnNum < 1) {
+                    alert('Column number must be a positive integer (e.g., column:5)');
+                    return;
+                }
+                processedPattern = (columnNum - 1).toString(); // Convert to 0-based
+            } else {
+                // Validate regex
+                try {
+                    new RegExp(processedPattern);
+                } catch (e) {
+                    alert('Invalid regex pattern: ' + e.message);
+                    return;
+                }
+            }
+            
+            const replacementRule = {
+                command,
+                pattern: processedPattern,
+                replacement,
+                type
+            };
+            
+            console.log('Adding pattern replacement:', replacementRule);
+            
+            if (makePermanent) {
+                state.rules.persistent.patternReplacements.push(replacementRule);
+                savePersistentRules();
+            } else {
+                state.rules.session.patternReplacements.push(replacementRule);
+            }
+            
+            console.log('Total session replacements:', state.rules.session.patternReplacements.length);
+            console.log('Total persistent replacements:', state.rules.persistent.patternReplacements.length);
+            
+            commandInput.value = '';
+            patternInput.value = '';
+            valueInput.value = '';
+            
+            recomputeDiff();
+            updateRulesDisplay();
+        }
+        
+        // Apply rules to filter lines
+        function applyRules(lines, commandName) {
+            // First apply pattern replacements
+            console.log(`[applyRules] Processing command: "${commandName}", lines: ${lines.length}`);
+            const replacedLines = applyPatternReplacements(lines, commandName);
+            console.log(`[applyRules] After replacements, lines: ${replacedLines.length}`);
+            if (replacedLines.length > 0) {
+                console.log(`[applyRules] Sample replaced lines:`, replacedLines.slice(0, 3));
+            }
+            
+            return replacedLines.map((line, idx) => {
+                let ignored = false;
+
+                // Check line ignores (explicit line ignore rules only)
+                for (const rule of state.rules.session.lineIgnores) {
+                    if (rule.global && rule.line === line) {
+                        ignored = true;
+                        break;
+                    }
+                    if (!rule.global && rule.command === commandName && rule.line === line) {
+                        ignored = true;
+                        break;
+                    }
+                }
+
+                return { line, ignored, index: idx };
+            });
+        }
+
+        // Compute diff for a single command
+        function computeCommandDiff(preLines, postLines, commandName) {
+            const preFiltered = applyRules(preLines, commandName);
+            const postFiltered = applyRules(postLines, commandName);
+
+            const preText = state.showIgnored 
+                ? preFiltered.map(l => l.line).join('\n')
+                : preFiltered.filter(l => !l.ignored).map(l => l.line).join('\n');
+            
+            const postText = state.showIgnored
+                ? postFiltered.map(l => l.line).join('\n')
+                : postFiltered.filter(l => !l.ignored).map(l => l.line).join('\n');
+
+            const diff = Diff.createTwoFilesPatch(
+                'pre',
+                'post',
+                preText,
+                postText,
+                '',
+                '',
+                { context: 10000 }
+            );
+
+            return {
+                diff,
+                preFiltered,
+                postFiltered,
+                hasChanges: preText !== postText
+            };
+        }
+
+        // Render a command block
+        function renderCommandBlock(command, index) {
+            const isIgnored = state.rules.session.commandIgnores.includes(command.name);
+            
+            if (isIgnored && !state.showIgnored) {
+                return '';
+            }
+
+            const preCommand = command.preLines || [];
+            const postCommand = command.postLines || [];
+            
+            const diffResult = computeCommandDiff(preCommand, postCommand, command.name);
+            const diffCount = diffResult.hasChanges ? '•' : '✓';
+
+            const blockId = `command-${index}`;
+            const contentId = `content-${index}`;
+
+            return `
+                <div class="command-block" data-command="${escapeHtml(command.name)}">
+                    <div class="command-header ${isIgnored ? 'ignored' : ''}" onclick="toggleCommand('${contentId}', this)">
+                        <div class="command-title">
+                            <span class="chevron">▶</span>
+                            <span class="command-name">${escapeHtml(command.name)}</span>
+                            <span class="command-badge ${diffResult.hasChanges ? '' : 'no-diff'}">${diffCount}</span>
+                        </div>
+                        <div class="command-actions" onclick="event.stopPropagation()">
+                            ${!isIgnored ? `<button onclick="ignoreCommand('${escapeHtml(command.name)}')">Ignore Command</button>` : ''}
+                            ${isIgnored ? `<button onclick="unignoreCommand('${escapeHtml(command.name)}')">Restore Command</button>` : ''}
+                        </div>
+                    </div>
+                    <div class="command-content" id="${contentId}">
+                        <div class="command-diff" id="${blockId}"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render diff using diff2html
+        function renderDiff(commandName, diffText, containerId, preFiltered, postFiltered, diffResult) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // If no changes after pattern replacement, show the normalized output
+            if (!diffResult.hasChanges) {
+                const normalizedLines = preFiltered.map(l => escapeHtml(l.line)).join('<br>');
+                container.innerHTML = `
+                    <div class="no-changes-view">
+                        <div class="no-changes-message">✓ No differences (after pattern normalization)</div>
+                        <div class="normalized-output">
+                            <div class="output-label">Normalized Output:</div>
+                            <pre>${normalizedLines}</pre>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Regular diff rendering
+            const diff2htmlUi = new Diff2HtmlUI(container, diffText, {
+                drawFileList: false,
+                matching: 'lines',
+                outputFormat: 'side-by-side',
+                highlight: true
+            });
+
+            diff2htmlUi.draw();
+
+            // Attach line click handlers
+            attachLineHandlers(container, commandName, preFiltered, postFiltered);
+
+            // Apply ignored styling
+            if (state.showIgnored) {
+                applyIgnoredStyling(container, preFiltered, postFiltered);
+            }
+        }
+
+        // Apply styling to ignored lines
+        function applyIgnoredStyling(container, preFiltered, postFiltered) {
+            const leftLines = container.querySelectorAll('.d2h-code-side-line.d2h-del, .d2h-code-side-line.d2h-cntx');
+            const rightLines = container.querySelectorAll('.d2h-code-side-line.d2h-ins, .d2h-code-side-line.d2h-cntx');
+
+            leftLines.forEach((line, idx) => {
+                if (preFiltered[idx] && preFiltered[idx].ignored) {
+                    line.classList.add('ignored');
+                }
+            });
+
+            rightLines.forEach((line, idx) => {
+                if (postFiltered[idx] && postFiltered[idx].ignored) {
+                    line.classList.add('ignored');
+                }
+            });
+        }
+
+        // Attach line click handlers for ignore functionality
+        function attachLineHandlers(container, commandName, preFiltered, postFiltered) {
+            const lines = container.querySelectorAll('.d2h-code-side-line');
+            
+            lines.forEach(line => {
+                line.addEventListener('click', (e) => {
+                    if (e.target.closest('.line-menu')) return;
+                    
+                    const lineText = line.querySelector('.d2h-code-line-ctn')?.textContent?.trim();
+                    if (!lineText) return;
+
+                    // Remove any existing menus
+                    document.querySelectorAll('.line-menu').forEach(m => m.remove());
+
+                    // Create menu
+                    const menu = document.createElement('div');
+                    menu.className = 'line-menu';
+                    menu.innerHTML = `
+                        <div class="line-menu-item" data-action="ignore-local">Ignore this line (this command)</div>
+                        <div class="line-menu-item" data-action="ignore-global">Ignore this line (globally)</div>
+                    `;
+
+                    menu.addEventListener('click', (e) => {
+                        const action = e.target.dataset.action;
+                        if (action === 'ignore-local') {
+                            ignoreLine(lineText, commandName, false);
+                        } else if (action === 'ignore-global') {
+                            ignoreLine(lineText, commandName, true);
+                        }
+                        menu.remove();
+                    });
+
+                    line.style.position = 'relative';
+                    line.appendChild(menu);
+
+                    // Close menu on outside click
+                    setTimeout(() => {
+                        document.addEventListener('click', function closeMenu(e) {
+                            if (!menu.contains(e.target)) {
+                                menu.remove();
+                                document.removeEventListener('click', closeMenu);
+                            }
+                        });
+                    }, 0);
+                });
+            });
+        }
+
+        // Ignore a specific line
+        function ignoreLine(line, commandName, global) {
+            state.rules.session.lineIgnores.push({
+                line,
+                command: commandName,
+                global
+            });
+            recomputeDiff();
+            updateRulesDisplay();
+        }
+
+        // Ignore entire command
+        function ignoreCommand(commandName) {
+            if (!state.rules.session.commandIgnores.includes(commandName)) {
+                state.rules.session.commandIgnores.push(commandName);
+            }
+            recomputeDiff();
+            updateRulesDisplay();
+        }
+
+        // Unignore command
+        function unignoreCommand(commandName) {
+            state.rules.session.commandIgnores = state.rules.session.commandIgnores.filter(c => c !== commandName);
+            recomputeDiff();
+            updateRulesDisplay();
+        }
+
+        // Add regex pattern
+        // Add regex pattern (now creates replacement rules for all commands)
+        function addRegexPattern() {
+            const input = document.getElementById('regexInput');
+            const pattern = input.value.trim();
+            const makePermanent = document.getElementById('makePermanent').checked;
+
+            if (!pattern) return;
+
+            try {
+                new RegExp(pattern);
+                
+                // Create a replacement rule that applies to all commands (*)
+                const replacementRule = {
+                    command: '*',  // Apply to all commands
+                    pattern: pattern,
+                    replacement: 'XXXXX',  // Default replacement text
+                    type: 'regex'
+                };
+                
+                if (makePermanent) {
+                    state.rules.persistent.patternReplacements.push(replacementRule);
+                    savePersistentRules();
+                } else {
+                    state.rules.session.patternReplacements.push(replacementRule);
+                }
+
+                input.value = '';
+                recomputeDiff();
+                updateRulesDisplay();
+            } catch (e) {
+                alert('Invalid regex pattern: ' + e.message);
+            }
+        }
+
+        // Clear session rules
+        function clearSessionRules() {
+            state.rules.session = {
+                lineIgnores: [],
+                regexPatterns: [],
+                commandIgnores: [],
+                patternReplacements: []
+            };
+            recomputeDiff();
+            updateRulesDisplay();
+        }
+
+        // Clear all rules
+        function clearAllRules() {
+            if (!confirm('Clear all rules including persistent rules?')) return;
+            
+            state.rules.session = {
+                lineIgnores: [],
+                regexPatterns: [],
+                commandIgnores: [],
+                patternReplacements: []
+            };
+            state.rules.persistent = {
+                regexPatterns: [],
+                patternReplacements: []
+            };
+            savePersistentRules();
+            recomputeDiff();
+            updateRulesDisplay();
+        }
+
+        // Delete specific rule
+        function deleteRule(type, value, persistent) {
+            if (persistent) {
+                if (type === 'regex') {
+                    state.rules.persistent.regexPatterns = state.rules.persistent.regexPatterns.filter(p => p !== value);
+                } else if (type === 'replace') {
+                    state.rules.persistent.patternReplacements = state.rules.persistent.patternReplacements.filter(r => {
+                        const encoded = `${r.command}|${r.pattern}|${r.replacement}|${r.type}`;
+                        return encoded !== value;
+                    });
+                }
+                savePersistentRules();
+            } else {
+                if (type === 'regex') {
+                    state.rules.session.regexPatterns = state.rules.session.regexPatterns.filter(p => p !== value);
+                } else if (type === 'command') {
+                    state.rules.session.commandIgnores = state.rules.session.commandIgnores.filter(c => c !== value);
+                } else if (type === 'replace') {
+                    state.rules.session.patternReplacements = state.rules.session.patternReplacements.filter(r => {
+                        const encoded = `${r.command}|${r.pattern}|${r.replacement}|${r.type}`;
+                        return encoded !== value;
+                    });
+                }
+            }
+            recomputeDiff();
+            updateRulesDisplay();
+        }
+
+        // Update rules display
+        function updateRulesDisplay() {
+            const panel = document.getElementById('rulesPanel');
+            const list = document.getElementById('rulesList');
+            
+            const allRules = [
+                ...state.rules.session.regexPatterns.map(p => ({ type: 'regex', value: p, persistent: false })),
+                ...state.rules.persistent.regexPatterns.map(p => ({ type: 'regex', value: p, persistent: true })),
+                ...state.rules.session.commandIgnores.map(c => ({ type: 'command', value: c, persistent: false })),
+                ...state.rules.session.lineIgnores.map(l => ({ type: 'line', value: `${l.global ? 'Global' : l.command}: ${l.line}`, persistent: false })),
+                ...state.rules.session.patternReplacements.map(r => ({
+                    type: 'replace',
+                    value: `${r.command}|${r.pattern}|${r.replacement}|${r.type}`,
+                    displayValue: `${r.command}: ${r.type === 'column' ? 'Column ' + (parseInt(r.pattern) + 1) : r.pattern} → "${r.replacement}"`,
+                    persistent: false
+                })),
+                ...state.rules.persistent.patternReplacements.map(r => ({
+                    type: 'replace',
+                    value: `${r.command}|${r.pattern}|${r.replacement}|${r.type}`,
+                    displayValue: `${r.command}: ${r.type === 'column' ? 'Column ' + (parseInt(r.pattern) + 1) : r.pattern} → "${r.replacement}"`,
+                    persistent: true
+                }))
+            ];
+
+            if (allRules.length === 0) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            panel.style.display = 'block';
+            list.innerHTML = allRules.map(rule => `
+                <div class="rule-item">
+                    <div>
+                        <span class="rule-type ${rule.persistent ? 'persistent' : ''}">${rule.type}</span>
+                        <span class="rule-text">${escapeHtml(rule.displayValue || rule.value)}</span>
+                    </div>
+                    <button class="rule-delete" onclick="deleteRule('${rule.type}', '${escapeHtml(rule.value)}', ${rule.persistent})">×</button>
+                </div>
+            `).join('');
+        }
+
+        // Toggle command accordion
+        function toggleCommand(contentId, header) {
+            const content = document.getElementById(contentId);
+            const chevron = header.querySelector('.chevron');
+            
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                chevron.classList.remove('open');
+            } else {
+                content.classList.add('open');
+                chevron.classList.add('open');
+            }
+        }
+
+        // Compute and render all diffs
+        function computeDiff() {
+            console.log('computeDiff called');
+            console.log('preConfig length:', state.preConfig?.length);
+            console.log('postConfig length:', state.postConfig?.length);
+            
+            if (!state.preConfig || !state.postConfig) {
+                alert('Please select both pre and post configuration files');
+                return;
+            }
+
+            try {
+                const preInput = state.preConfig;
+                const postInput = state.postConfig;
+
+                const preCommands = splitCommands(preInput);
+                const postCommands = splitCommands(postInput);
+                
+                console.log('Pre commands found:', preCommands.length);
+                console.log('Post commands found:', postCommands.length);
+
+                // Merge commands from both sides
+                const commandMap = new Map();
+
+                preCommands.forEach(cmd => {
+                    commandMap.set(cmd.name, { name: cmd.name, preLines: cmd.lines, postLines: [] });
+                });
+
+                postCommands.forEach(cmd => {
+                    if (commandMap.has(cmd.name)) {
+                        commandMap.get(cmd.name).postLines = cmd.lines;
+                    } else {
+                        commandMap.set(cmd.name, { name: cmd.name, preLines: [], postLines: cmd.lines });
+                    }
+                });
+
+                state.commands = Array.from(commandMap.values());
+                console.log('Total commands after merge:', state.commands.length);
+
+                recomputeDiff();
+            } catch (error) {
+                console.error('Error in computeDiff:', error);
+                alert('Error computing diff: ' + error.message);
+            }
+        }
+
+        // Recompute diff without re-parsing
+        function recomputeDiff() {
+            console.log('recomputeDiff called, commands:', state.commands.length);
+            const resultsContainer = document.getElementById('diffResults');
+            
+            if (state.commands.length === 0) {
+                console.log('No commands to display');
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                        </svg>
+                        <p>No diff computed yet. Enter configurations and click "Compute Diff".</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const html = state.commands.map((cmd, idx) => renderCommandBlock(cmd, idx)).join('');
+                resultsContainer.innerHTML = html;
+                console.log('HTML rendered for', state.commands.length, 'commands');
+
+                // Render each command's diff with filter applied
+                let visibleCommands = 0;
+                state.commands.forEach((cmd, idx) => {
+                    // Check if command matches filter
+                    if (!matchesCommandFilter(cmd.name, state.commandFilter)) {
+                        // Hide the command block
+                        const blockElement = document.querySelector(`[data-command="${CSS.escape(cmd.name)}"]`);
+                        if (blockElement) {
+                            blockElement.style.display = 'none';
+                        }
+                        return;
+                    }
+                    
+                    visibleCommands++;
+                    const isIgnored = state.rules.session.commandIgnores.includes(cmd.name);
+                    if (isIgnored && !state.showIgnored) return;
+
+                    const diffResult = computeCommandDiff(cmd.preLines || [], cmd.postLines || [], cmd.name);
+                    console.log(`[recomputeDiff] Command "${cmd.name}": hasChanges=${diffResult.hasChanges}, rendering diff...`);
+                    renderDiff(cmd.name, diffResult.diff, `command-${idx}`, diffResult.preFiltered, diffResult.postFiltered, diffResult);
+                });
+                
+                console.log('Visible commands after filter:', visibleCommands);
+
+                updateStats();
+                console.log('Diff rendering complete');
+            } catch (error) {
+                console.error('Error in recomputeDiff:', error);
+                resultsContainer.innerHTML = `<div class="empty-state"><p style="color: #e74c3c;">Error rendering diff: ${escapeHtml(error.message)}</p></div>`;
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            let totalDiffs = 0;
+            let ignoredLines = 0;
+            let ignoredCommands = state.rules.session.commandIgnores.length;
+            let visibleCommands = 0;
+
+            state.commands.forEach(cmd => {
+                // Check if command matches filter
+                if (!matchesCommandFilter(cmd.name, state.commandFilter)) {
+                    return;
+                }
+                
+                visibleCommands++;
+                
+                const preFiltered = applyRules(cmd.preLines || [], cmd.name);
+                const postFiltered = applyRules(cmd.postLines || [], cmd.name);
+
+                const preText = preFiltered.filter(l => !l.ignored).map(l => l.line).join('\n');
+                const postText = postFiltered.filter(l => !l.ignored).map(l => l.line).join('\n');
+
+                if (preText !== postText) {
+                    totalDiffs++;
+                }
+
+                ignoredLines += preFiltered.filter(l => l.ignored).length;
+                ignoredLines += postFiltered.filter(l => l.ignored).length;
+            });
+
+            document.getElementById('totalDiffs').textContent = totalDiffs;
+            document.getElementById('visibleCommands').textContent = visibleCommands;
+            document.getElementById('ignoredLines').textContent = ignoredLines;
+            document.getElementById('ignoredCommands').textContent = ignoredCommands;
+        }
+
+        // Export HTML report
+        function exportReport() {
+            if (state.commands.length === 0) {
+                alert('No diff to export. Compute diff first.');
+                return;
+            }
+
+            const reportHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DriftIQ Report</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { color: #2c3e50; }
+        .command-block { margin: 20px 0; padding: 20px; background: white; border-radius: 8px; }
+        .command-name { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>DriftIQ Configuration Diff Report</h1>
+    <p>Generated: ${new Date().toLocaleString()}</p>
+    ${state.commands.map(cmd => {
+        const diffResult = computeCommandDiff(cmd.preLines || [], cmd.postLines || [], cmd.name);
+        return `
+            <div class="command-block">
+                <div class="command-name">${escapeHtml(cmd.name)}</div>
+                <div class="diff-content">${diffResult.diff}</div>
+            </div>
+        `;
+    }).join('')}
+    <script src="https://cdn.jsdelivr.net/npm/diff/dist/diff.min.js"><\/script>
+    <script src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"><\/script>
+    <script>
+        document.querySelectorAll('.diff-content').forEach(el => {
+            const diff2htmlUi = new Diff2HtmlUI(el, el.textContent, {
+                drawFileList: false,
+                matching: 'lines',
+                outputFormat: 'side-by-side'
+            });
+            diff2htmlUi.draw();
+        });
+    <\/script>
+</body>
+</html>
+            `;
+
+            const blob = new Blob([reportHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'driftiq-report.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // File handling
+        function handleFileSelect(fileInput, infoElement, isPreConfig) {
+            if (!fileInput || !infoElement) {
+                console.error('File input or info element not found');
+                return;
+            }
+            
+            console.log('Setting up file handler for', isPreConfig ? 'pre' : 'post', 'config');
+            
+            fileInput.addEventListener('change', async (e) => {
+                console.log('File selected:', e.target.files[0]?.name);
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const text = await file.text();
+                    console.log('File read successfully, length:', text.length);
+                    
+                    if (isPreConfig) {
+                        state.preConfig = text;
+                        console.log('Pre config loaded');
+                    } else {
+                        state.postConfig = text;
+                        console.log('Post config loaded');
+                    }
+
+                    infoElement.className = 'file-info loaded';
+                    infoElement.innerHTML = `
+                        <div>
+                            <span class="file-name">✓ ${escapeHtml(file.name)}</span>
+                            <span class="file-size">(${formatFileSize(file.size)})</span>
+                        </div>
+                        <div style="margin-top: 5px; font-size: 12px;">
+                            ${text.split('\n').length} lines loaded
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Error reading file:', error);
+                    alert('Error reading file: ' + error.message);
+                    infoElement.className = 'file-info';
+                    infoElement.innerHTML = '<span style="color: #e74c3c;">Error loading file</span>';
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
+            loadPersistentRules();
+            updateRulesDisplay();
+            
+            // Set up event listeners
+            document.getElementById('computeDiff').addEventListener('click', computeDiff);
+            document.getElementById('addRegex').addEventListener('click', addRegexPattern);
+            document.getElementById('addReplacement').addEventListener('click', addPatternReplacement);
+            document.getElementById('applyFilter').addEventListener('click', applyCommandFilter);
+            document.getElementById('clearFilter').addEventListener('click', clearCommandFilter);
+            document.getElementById('clearSession').addEventListener('click', clearSessionRules);
+            document.getElementById('clearAll').addEventListener('click', clearAllRules);
+            document.getElementById('exportReport').addEventListener('click', exportReport);
+            
+            document.getElementById('showIgnored').addEventListener('change', (e) => {
+                state.showIgnored = e.target.checked;
+                recomputeDiff();
+            });
+
+            document.getElementById('regexInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addRegexPattern();
+                }
+            });
+            
+            document.getElementById('replaceValue').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addPatternReplacement();
+                }
+            });
+            
+            // Live filter on command input
+            document.getElementById('commandFilter').addEventListener('input', (e) => {
+                if (document.getElementById('liveFilter').checked) {
+                    state.commandFilter = e.target.value.trim();
+                    recomputeDiff();
+                }
+            });
+            
+            document.getElementById('commandFilter').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    applyCommandFilter();
+                }
+            });
+            
+            // Initialize file inputs
+            const preFileInput = document.getElementById('preFileInput');
+            const preFileInfo = document.getElementById('preFileInfo');
+            const postFileInput = document.getElementById('postFileInput');
+            const postFileInfo = document.getElementById('postFileInfo');
+            
+            console.log('Pre file input:', preFileInput);
+            console.log('Post file input:', postFileInput);
+            
+            if (preFileInput && preFileInfo) {
+                handleFileSelect(preFileInput, preFileInfo, true);
+            } else {
+                console.error('Pre file input or info element not found');
+            }
+            
+            if (postFileInput && postFileInfo) {
+                handleFileSelect(postFileInput, postFileInfo, false);
+            } else {
+                console.error('Post file input or info element not found');
+            }
+        });
+    </script>
+</body>
+</html>
